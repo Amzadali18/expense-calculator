@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ExpenseCloud – Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <!-- Chart.js for the expense graph -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dashboard-body">
+
+  <!-- ── TOP NAVIGATION ── -->
+  <nav class="navbar">
+    <div class="nav-logo">💰 ExpenseCloud</div>
+    <div class="nav-right">
+      <span id="user-email" class="user-email"></span>
+      <button class="btn-logout" onclick="logoutUser()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div class="dashboard-container">
+
+    <!-- LEFT PANEL: Summary + Chart -->
+    <div class="left-panel">
+
+      <!-- Month Picker -->
+      <div class="card month-card">
+        <label>📅 Filter by Month</label>
+        <input type="month" id="month-filter" onchange="loadExpenses()" />
+      </div>
+
+      <!-- Total Card -->
+      <div class="card total-card">
+        <p class="total-label">Total Spent</p>
+        <h2 class="total-amount">₹<span id="total-amount">0.00</span></h2>
+        <p id="expense-count" class="expense-count">0 expenses</p>
+      </div>
+
+      <!-- Category Chart -->
+      <div class="card chart-card">
+        <h3>📊 Spending by Category</h3>
+        <canvas id="categoryChart"></canvas>
+        <p id="no-chart-msg" class="no-data-msg">Add expenses to see chart</p>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Add Form + Expense List -->
+    <div class="right-panel">
+
+      <!-- Add / Edit Expense Form -->
+      <div class="card form-card">
+        <h3 id="form-title">➕ Add New Expense</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="exp-title" placeholder="e.g. Lunch at restaurant" />
+          </div>
+          <div class="form-group">
+            <label>Amount (₹)</label>
+            <input type="number" id="exp-amount" placeholder="e.g. 250" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="exp-category">
+              <option value="Food">🍔 Food</option>
+              <option value="Travel">✈️ Travel</option>
+              <option value="Shopping">🛍️ Shopping</option>
+              <option value="Bills">💡 Bills</option>
+              <option value="Health">💊 Health</option>
+              <option value="Entertainment">🎬 Entertainment</option>
+              <option value="Education">📚 Education</option>
+              <option value="Other">📦 Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="exp-date" />
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label>Note (optional)</label>
+          <input type="text" id="exp-note" placeholder="Any extra details..." />
+        </div>
+
+        <!-- Hidden field to store ID when editing -->
+        <input type="hidden" id="edit-id" value="" />
+
+        <div class="form-actions">
+          <button class="btn-primary" onclick="saveExpense()">💾 Save Expense</button>
+          <button class="btn-cancel hidden" id="cancel-btn" onclick="cancelEdit()">✕ Cancel</button>
+        </div>
+        <div id="form-message" class="message hidden"></div>
+      </div>
+
+      <!-- Expense List -->
+      <div class="card list-card">
+        <h3>📋 Your Expenses</h3>
+        <div id="expense-list">
+          <p class="no-data-msg">No expenses found. Add your first one!</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+  <!-- REPLACE WITH YOUR CONFIG -->
+  <script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyDSi8CHE1ouwjPtYXZgVLSyasqSkyz0sDw",
+  authDomain: "expense-calculator-1931c.firebaseapp.com",
+  projectId: "expense-calculator-1931c",
+  storageBucket: "expense-calculator-1931c.firebasestorage.app",
+  messagingSenderId: "902412485100",
+  appId: "1:902412485100:web:7d13fda2877a76f3cbc0c9",
+  measurementId: "G-L98V2R5KXY"
+};
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <script src="js/expenses.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ExpenseCloud – Login</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="auth-body">
+
+  <div class="auth-card">
+    <!-- Logo / Header -->
+    <div class="auth-header">
+      <div class="logo-icon">💰</div>
+      <h1>ExpenseCloud</h1>
+      <p>Track every rupee, every day</p>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="tab-switcher">
+      <button class="tab-btn active" onclick="showTab('login')">Login</button>
+      <button class="tab-btn" onclick="showTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="login-tab" class="tab-content active">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter your password" />
+      </div>
+      <button class="btn-primary" onclick="loginUser()">Login →</button>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="signup-tab" class="tab-content">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Your name" />
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="signup-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="Min 6 characters" />
+      </div>
+      <button class="btn-primary" onclick="signupUser()">Create Account →</button>
+    </div>
+
+    <!-- Error/Success Message -->
+    <div id="auth-message" class="message hidden"></div>
+  </div>
+
+  <!-- Firebase SDK (use your own config here) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+  <!-- Your Firebase Config — REPLACE WITH YOURS -->
+  <script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDSi8CHE1ouwjPtYXZgVLSyasqSkyz0sDw",
+        authDomain: "expense-calculator-1931c.firebaseapp.com",
+        projectId: "expense-calculator-1931c",
+        storageBucket: "expense-calculator-1931c.firebasestorage.app",
+        messagingSenderId: "902412485100",
+        appId: "1:902412485100:web:7d13fda2877a76f3cbc0c9",
+        measurementId: "G-L98V2R5KXY"
+};
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <script src="js/auth.js"></script>
+</body>
+</html>

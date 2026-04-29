@@ -302,3 +302,23 @@ function escapeHtml(str) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
+// ── Email Alert (EmailJS) ─────────────────────────
+emailjs.init("_CZ14jL2sTIJQf_Uh");
+
+async function checkSpendingAlert(total) {
+  if (total < 5000) return;  // only alert if over ₹5000
+
+  const month = new Date().toLocaleString("default", { month: "long", year: "numeric" });
+
+  try {
+    await emailjs.send("service_qcsgyl8", "template_ns6icld", {
+      to_name:  currentUser.displayName || "User",
+      to_email: currentUser.email,
+      total:    total.toFixed(2),
+      month:    month
+    });
+    console.log("Alert email sent!");
+  } catch (err) {
+    console.error("Email alert failed:", err);
+  }
+}

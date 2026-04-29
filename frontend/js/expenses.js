@@ -1,6 +1,6 @@
 // expenses.js
 // Handles all expense operations: Add, Edit, Delete, List, Chart
-const API_BASE = "http://localhost:5000";  // Flask backend URL
+const API_BASE = "https://expense-calculator-pkjs.onrender.com";  // Flask backend URL
 
 let currentUser   = null;  // Stores logged-in user info
 let authToken     = null;  // Firebase ID token for API requests

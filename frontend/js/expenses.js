@@ -31,9 +31,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
   document.getElementById("exp-date").value = new Date().toISOString().split("T")[0];
   document.getElementById("month-filter").value = new Date().toISOString().slice(0, 7);
   authToken = await user.getIdToken();
-
   emailjs.init("_CZ14jL2sTIJQf_Uh");
-
   loadExpenses();
 });
 

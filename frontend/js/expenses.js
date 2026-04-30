@@ -22,26 +22,18 @@ const CATEGORY_ICONS = {
 // ── Wait for Firebase to confirm login ───────────────
 firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) {
-    // Not logged in — go back to login page
     window.location.href = "index.html";
     return;
   }
 
   currentUser = user;
-
-  // Show user email in navbar
   document.getElementById("user-email").textContent = user.email;
-
-  // Set today's date as default in the form
   document.getElementById("exp-date").value = new Date().toISOString().split("T")[0];
-
-  // Set current month as default filter
   document.getElementById("month-filter").value = new Date().toISOString().slice(0, 7);
-
-  // Get the Firebase auth token (needed to call our Flask API)
   authToken = await user.getIdToken();
 
-  // Load expenses
+  emailjs.init("_CZ14jL2sTIJQf_Uh");
+
   loadExpenses();
 });
 
@@ -60,6 +52,7 @@ async function loadExpenses() {
     // Update UI
     displayExpenses(allExpenses);
     updateSummaryCard(data.total, allExpenses.length);
+    checkSpendingAlert(data.total);
     loadChart(month);
 
   } catch (err) {
@@ -303,7 +296,6 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 // ── Email Alert (EmailJS) ─────────────────────────
-emailjs.init("_CZ14jL2sTIJQf_Uh");
 
 async function checkSpendingAlert(total) {
   if (total < 5000) return;  // only alert if over ₹5000

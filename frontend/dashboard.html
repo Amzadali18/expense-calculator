@@ -106,24 +106,31 @@
     </div>
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- ── SCRIPTS (order matters!) ── -->
+
+  <!-- 1. Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
-  <!-- REPLACE WITH YOUR CONFIG -->
+  <!-- 2. EmailJS — must be BEFORE expenses.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+  <!-- 3. Firebase Config -->
   <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyDSi8CHE1ouwjPtYXZgVLSyasqSkyz0sDw",
-  authDomain: "expense-calculator-1931c.firebaseapp.com",
-  projectId: "expense-calculator-1931c",
-  storageBucket: "expense-calculator-1931c.firebasestorage.app",
-  messagingSenderId: "902412485100",
-  appId: "1:902412485100:web:7d13fda2877a76f3cbc0c9",
-  measurementId: "G-L98V2R5KXY"
-};
+      apiKey: "AIzaSyDSi8CHE1ouwjPtYXZgVLSyasqSkyz0sDw",
+      authDomain: "expense-calculator-1931c.firebaseapp.com",
+      projectId: "expense-calculator-1931c",
+      storageBucket: "expense-calculator-1931c.firebasestorage.app",
+      messagingSenderId: "902412485100",
+      appId: "1:902412485100:web:7d13fda2877a76f3cbc0c9",
+      measurementId: "G-L98V2R5KXY"
+    };
     firebase.initializeApp(firebaseConfig);
   </script>
 
+  <!-- 4. Your app logic — must be LAST -->
   <script src="js/expenses.js"></script>
+
 </body>
 </html>

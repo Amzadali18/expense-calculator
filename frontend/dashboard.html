@@ -37,6 +37,15 @@
         <p class="total-label">Total Spent</p>
         <h2 class="total-amount">₹<span id="total-amount">0.00</span></h2>
         <p id="expense-count" class="expense-count">0 expenses</p>
+        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+        <div style="display: flex; flex-direction: column; gap: 8px; text-align: left;">
+          <label style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Alert Budget Limit (₹)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="number" id="budget-limit" value="5000" style="padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; width: 100%; outline: none;" />
+            <button onclick="saveBudgetLimit()" style="padding: 6px 12px; background: #6c63ff; color: white; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: 600; white-space: nowrap;">Set Limit</button>
+          </div>
+          <p id="budget-message" style="font-size: 0.75rem; color: #22c55e; margin: 0; display: none;">Budget saved!</p>
+        </div>
       </div>
 
       <!-- Category Chart -->

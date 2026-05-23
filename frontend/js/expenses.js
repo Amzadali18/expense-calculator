@@ -6,6 +6,7 @@ let currentUser   = null;  // Stores logged-in user info
 let authToken     = null;  // Firebase ID token for API requests
 let expenseChart  = null;  // Chart.js instance
 let allExpenses   = [];    // Local copy of expenses
+let budgetLimit   = 5000;  // Custom budget limit
 
 // ── Category icon mapping ─────────────────────────────
 const CATEGORY_ICONS = {
@@ -32,6 +33,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
   document.getElementById("month-filter").value = new Date().toISOString().slice(0, 7);
   authToken = await user.getIdToken();
   emailjs.init("_CZ14jL2sTIJQf_Uh");
+  await loadBudgetLimit();
   loadExpenses();
 });
 
@@ -296,7 +298,7 @@ function escapeHtml(str) {
 // ── Email Alert (EmailJS) ─────────────────────────
 
 async function checkSpendingAlert(total) {
-  if (total < 5000) return;  // only alert if over ₹5000
+  if (total < budgetLimit) return;  // only alert if over budget limit
 
   const month = new Date().toLocaleString("default", { month: "long", year: "numeric" });
 
@@ -310,5 +312,49 @@ async function checkSpendingAlert(total) {
     console.log("Alert email sent!");
   } catch (err) {
     console.error("Email alert failed:", err);
+  }
+}
+
+// ── Budget Limit Logic ────────────────────────────────
+async function loadBudgetLimit() {
+  try {
+    const response = await fetch(`${API_BASE}/budget`, {
+      headers: { "Authorization": `Bearer ${authToken}` }
+    });
+    const data = await response.json();
+    budgetLimit = data.limit || 5000;
+    const inputField = document.getElementById("budget-limit");
+    if (inputField) inputField.value = budgetLimit;
+  } catch (err) {
+    console.error("Failed to load budget limit:", err);
+  }
+}
+
+async function saveBudgetLimit() {
+  const newLimit = parseFloat(document.getElementById("budget-limit").value);
+  if (!newLimit || newLimit <= 0) return;
+
+  try {
+    const response = await fetch(`${API_BASE}/budget`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ limit: newLimit })
+    });
+    
+    if (response.ok) {
+      budgetLimit = newLimit;
+      const msg = document.getElementById("budget-message");
+      msg.style.display = "block";
+      setTimeout(() => msg.style.display = "none", 3000);
+      
+      // Re-check expenses against new limit
+      const total = parseFloat(document.getElementById("total-amount").textContent);
+      checkSpendingAlert(total);
+    }
+  } catch (err) {
+    console.error("Failed to save budget limit:", err);
   }
 }

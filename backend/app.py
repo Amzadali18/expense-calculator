@@ -184,6 +184,50 @@ def get_summary():
     return jsonify({"month": month, "summary": category_totals}), 200
 
 
+# ─────────────────────────────────────────────
+# ROUTE 6: Set custom budget limit
+# ─────────────────────────────────────────────
+@app.route("/budget", methods=["POST"])
+def set_budget():
+    """
+    Save the user's custom monthly budget limit.
+    """
+    uid = verify_token(request)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json
+    limit = data.get("limit")
+    if limit is None or float(limit) <= 0:
+        return jsonify({"error": "Invalid budget limit"}), 400
+
+    # Save to Firestore: users/{uid}/settings/budget
+    db.collection("users").document(uid).collection("settings").document("budget").set({"limit": float(limit)})
+
+    return jsonify({"message": "Budget limit updated!", "limit": float(limit)}), 200
+
+# ─────────────────────────────────────────────
+# ROUTE 7: Get custom budget limit
+# ─────────────────────────────────────────────
+@app.route("/budget", methods=["GET"])
+def get_budget():
+    """
+    Retrieve the user's custom monthly budget limit. Defaults to 5000.
+    """
+    uid = verify_token(request)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    doc = db.collection("users").document(uid).collection("settings").document("budget").get()
+    
+    if doc.exists:
+        limit = doc.to_dict().get("limit", 5000)
+    else:
+        limit = 5000
+
+    return jsonify({"limit": limit}), 200
+
+
 # Start the Flask server
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

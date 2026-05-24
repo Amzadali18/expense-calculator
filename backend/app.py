@@ -2,17 +2,24 @@
 # This is the main Flask web server.
 # It creates API endpoints that the frontend calls to read/write data.
 
+import os
+import uuid
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from firebase_admin import firestore, auth
 from firebase_config import db
 from datetime import datetime
-
+import boto3
+from werkzeug.utils import secure_filename
 # Create Flask app
 app = Flask(__name__)
 
 # Allow frontend (running on different port) to talk to this server
 CORS(app)
+
+# Initialize S3 Client
+s3_client = boto3.client('s3')
+S3_BUCKET = os.environ.get("S3_BUCKET_NAME", "my-expense-receipts-bucket")
 
 # ─────────────────────────────────────────────
 # HELPER: Verify the user's login token
@@ -60,6 +67,9 @@ def add_expense():
         "note":        data.get("note", ""),
         "created_at":  firestore.SERVER_TIMESTAMP,  # Auto timestamp
     }
+    
+    if data.get("receipt_url"):
+        expense["receipt_url"] = data["receipt_url"]
 
     # Save to Firestore: users → {uid} → expenses → {auto-id}
     doc_ref = db.collection("users").document(uid).collection("expenses").add(expense)
@@ -129,6 +139,7 @@ def update_expense(expense_id):
     if "category" in data: update_data["category"] = data["category"]
     if "date"     in data: update_data["date"]     = data["date"]
     if "note"     in data: update_data["note"]     = data["note"]
+    if "receipt_url" in data: update_data["receipt_url"] = data["receipt_url"]
 
     # Update in Firestore
     db.collection("users").document(uid).collection("expenses").document(expense_id).update(update_data)
@@ -226,6 +237,43 @@ def get_budget():
         limit = 5000
 
     return jsonify({"limit": limit}), 200
+
+# ─────────────────────────────────────────────
+# ROUTE 8: Upload Receipt Image to S3
+# ─────────────────────────────────────────────
+@app.route("/upload-receipt", methods=["POST"])
+def upload_receipt():
+    uid = verify_token(request)
+    if not uid:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if 'receipt' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    file = request.files['receipt']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+        
+    if file:
+        filename = secure_filename(file.filename)
+        # Create a unique filename using UUID
+        unique_filename = f"receipts/{uid}/{uuid.uuid4().hex}_{filename}"
+        
+        try:
+            # Upload to S3
+            s3_client.upload_fileobj(
+                file,
+                S3_BUCKET,
+                unique_filename,
+                ExtraArgs={'ContentType': file.content_type, 'ACL': 'public-read'} # Requires bucket ACL to be enabled
+            )
+            
+            # Since Vocareum is us-east-1, we can construct the URL directly
+            receipt_url = f"https://{S3_BUCKET}.s3.us-east-1.amazonaws.com/{unique_filename}"
+            
+            return jsonify({"message": "File uploaded", "receipt_url": receipt_url}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
 
 
 # Start the Flask server

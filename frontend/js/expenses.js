@@ -75,7 +75,10 @@ function displayExpenses(expenses) {
       <div class="category-badge">${CATEGORY_ICONS[exp.category] || "📦"}</div>
       <div class="expense-info">
         <div class="expense-title">${escapeHtml(exp.title)}</div>
-        <div class="expense-meta">${exp.category} · ${exp.date}${exp.note ? " · " + escapeHtml(exp.note) : ""}</div>
+        <div class="expense-meta">
+          ${exp.category} · ${exp.date}${exp.note ? " · " + escapeHtml(exp.note) : ""}
+          ${exp.receipt_url ? ` · <a href="${exp.receipt_url}" target="_blank" style="color: #6c63ff; text-decoration: none; font-weight: 600;">📸 View Receipt</a>` : ""}
+        </div>
       </div>
       <div class="expense-amount">₹${exp.amount.toFixed(2)}</div>
       <div class="expense-actions">
@@ -172,6 +175,32 @@ async function saveExpense() {
   const payload = { title, amount: parseFloat(amount), category, date, note };
 
   try {
+    // ── Upload Receipt if present ──
+    const fileInput = document.getElementById("exp-receipt");
+    if (fileInput && fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append("receipt", file);
+      
+      const msgEl = document.getElementById("receipt-upload-msg");
+      if (msgEl) msgEl.style.display = "block";
+
+      const uploadRes = await fetch(`${API_BASE}/upload-receipt`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${authToken}` },
+        body: formData
+      });
+      
+      if (msgEl) msgEl.style.display = "none";
+
+      if (uploadRes.ok) {
+        const uploadData = await uploadRes.json();
+        payload.receipt_url = uploadData.receipt_url;
+      } else {
+        console.error("Failed to upload receipt:", await uploadRes.text());
+      }
+    }
+
     if (editId) {
       // UPDATE existing expense
       await fetch(`${API_BASE}/expenses/${editId}`, {
@@ -269,6 +298,8 @@ function clearForm() {
   document.getElementById("exp-note").value   = "";
   document.getElementById("exp-date").value   = new Date().toISOString().split("T")[0];
   document.getElementById("exp-category").value = "Food";
+  const fileInput = document.getElementById("exp-receipt");
+  if (fileInput) fileInput.value = "";
 }
 
 // ── Logout ────────────────────────────────────────────
@@ -307,7 +338,8 @@ async function checkSpendingAlert(total) {
       to_name:  currentUser.displayName || "User",
       to_email: currentUser.email,
       total:    total.toFixed(2),
-      month:    month
+      month:    month,
+      limit:    budgetLimit
     });
     console.log("Alert email sent!");
   } catch (err) {

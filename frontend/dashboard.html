@@ -93,6 +93,11 @@
           <label>Note (optional)</label>
           <input type="text" id="exp-note" placeholder="Any extra details..." />
         </div>
+        <div class="form-group full-width">
+          <label>📸 Receipt Image (optional)</label>
+          <input type="file" id="exp-receipt" accept="image/*" style="padding: 10px; border: 2px dashed #cbd5e1; border-radius: 8px; width: 100%; cursor: pointer;" />
+          <p id="receipt-upload-msg" style="font-size: 0.75rem; color: #64748b; margin-top: 4px; display: none;">Uploading...</p>
+        </div>
 
         <!-- Hidden field to store ID when editing -->
         <input type="hidden" id="edit-id" value="" />

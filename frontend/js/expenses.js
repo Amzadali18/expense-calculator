@@ -300,6 +300,8 @@ function clearForm() {
   document.getElementById("exp-category").value = "Food";
   const fileInput = document.getElementById("exp-receipt");
   if (fileInput) fileInput.value = "";
+  const fileDisplay = document.getElementById("file-name-display");
+  if (fileDisplay) fileDisplay.innerText = "Click to select receipt image";
 }
 
 // ── Logout ────────────────────────────────────────────
@@ -360,6 +362,37 @@ async function loadBudgetLimit() {
   } catch (err) {
     console.error("Failed to load budget limit:", err);
   }
+}
+
+// ── Export to CSV ─────────────────────────────────────
+function exportToCSV() {
+  if (!allExpenses || allExpenses.length === 0) {
+    alert("No expenses to export!");
+    return;
+  }
+  
+  const headers = ["Date", "Category", "Title", "Amount", "Note", "Receipt URL"];
+  
+  const rows = allExpenses.map(exp => {
+    return [
+      exp.date,
+      `"${exp.category}"`,
+      `"${exp.title.replace(/"/g, '""')}"`,
+      exp.amount,
+      `"${(exp.note || "").replace(/"/g, '""')}"`,
+      `"${exp.receipt_url || ""}"`
+    ].join(",");
+  });
+  
+  const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+  
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `expenses_${new Date().toISOString().split("T")[0]}.csv`);
+  document.body.appendChild(link); // Required for FF
+  link.click();
+  document.body.removeChild(link);
 }
 
 async function saveBudgetLimit() {

@@ -95,8 +95,12 @@
         </div>
         <div class="form-group full-width">
           <label>📸 Receipt Image (optional)</label>
-          <input type="file" id="exp-receipt" accept="image/*" style="padding: 10px; border: 2px dashed #cbd5e1; border-radius: 8px; width: 100%; cursor: pointer;" />
-          <p id="receipt-upload-msg" style="font-size: 0.75rem; color: #64748b; margin-top: 4px; display: none;">Uploading...</p>
+          <label class="file-upload-label" for="exp-receipt">
+            <span style="font-size: 24px; margin-bottom: 8px;">☁️</span>
+            <span id="file-name-display">Click to select receipt image</span>
+            <input type="file" id="exp-receipt" accept="image/*" onchange="document.getElementById('file-name-display').innerText = this.files[0] ? this.files[0].name : 'Click to select receipt image'" />
+          </label>
+          <p id="receipt-upload-msg" style="font-size: 0.85rem; color: #8b5cf6; margin-top: 8px; display: none;">Uploading to cloud...</p>
         </div>
 
         <!-- Hidden field to store ID when editing -->
@@ -111,7 +115,10 @@
 
       <!-- Expense List -->
       <div class="card list-card">
-        <h3>📋 Your Expenses</h3>
+        <h3>
+          <span>📋 Your Expenses</span>
+          <button class="btn-export" onclick="exportToCSV()">📥 Export CSV</button>
+        </h3>
         <div id="expense-list">
           <p class="no-data-msg">No expenses found. Add your first one!</p>
         </div>

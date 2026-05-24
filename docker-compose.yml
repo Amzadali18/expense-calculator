@@ -5,6 +5,8 @@ services:
     build: ./backend
     expose:
       - "5000"
+    environment:
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     restart: always
 
   frontend:

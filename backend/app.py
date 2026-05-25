@@ -96,6 +96,7 @@ def add_expense():
     expense = {
         "uid": uid,
         "expense_id": expense_id,
+        "id": expense_id,
         "title": data.get("title", "Untitled"),
         "amount": Decimal(str(amount)),
         "category": data["category"],
@@ -164,6 +165,10 @@ def get_expenses():
     expenses = []
     for item in items:
         item = decimal_to_native(item)
+        
+        # Map "id" for frontend compatibility
+        if "expense_id" in item:
+            item["id"] = item["expense_id"]
         
         # If month filter provided, only return matching expenses
         if month_filter and not item.get("date", "").startswith(month_filter):

@@ -491,10 +491,12 @@ def setup_dynamodb_tables():
         )
 
 
+# Run DynamoDB auto-setup on import/startup
+try:
+    setup_dynamodb_tables()
+except Exception as dberr:
+    print(f"Failed to auto-setup DynamoDB tables: {str(dberr)}")
+
 # Start the Flask server
 if __name__ == "__main__":
-    try:
-        setup_dynamodb_tables()
-    except Exception as dberr:
-        print(f"Failed to auto-setup DynamoDB tables: {str(dberr)}")
     app.run(debug=True, port=5000)

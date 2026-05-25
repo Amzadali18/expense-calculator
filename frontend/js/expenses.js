@@ -203,7 +203,7 @@ async function saveExpense() {
 
     if (editId) {
       // UPDATE existing expense
-      await fetch(`${API_BASE}/expenses/${editId}`, {
+      const res = await fetch(`${API_BASE}/expenses/${editId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -211,12 +211,16 @@ async function saveExpense() {
         },
         body: JSON.stringify(payload)
       });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update expense");
+      }
       showFormMessage("Expense updated!", "success");
       cancelEdit();  // Reset form
 
     } else {
       // ADD new expense
-      await fetch(`${API_BASE}/expenses`, {
+      const res = await fetch(`${API_BASE}/expenses`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -224,6 +228,10 @@ async function saveExpense() {
         },
         body: JSON.stringify(payload)
       });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to add expense");
+      }
       showFormMessage("Expense added!", "success");
       clearForm();
     }
@@ -235,7 +243,7 @@ async function saveExpense() {
     }, 1000);
 
   } catch (err) {
-    showFormMessage("Something went wrong. Try again.", "error");
+    showFormMessage(err.message || "Something went wrong. Try again.", "error");
   }
 }
 

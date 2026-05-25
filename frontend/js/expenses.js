@@ -212,8 +212,14 @@ async function saveExpense() {
         body: JSON.stringify(payload)
       });
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to update expense");
+        let errMsg = "Failed to update expense";
+        try {
+          const errorData = await res.json();
+          errMsg = errorData.error || errMsg;
+        } catch (e) {
+          errMsg = `Server Error (${res.status}): Please check backend container logs.`;
+        }
+        throw new Error(errMsg);
       }
       showFormMessage("Expense updated!", "success");
       cancelEdit();  // Reset form
@@ -229,8 +235,14 @@ async function saveExpense() {
         body: JSON.stringify(payload)
       });
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to add expense");
+        let errMsg = "Failed to add expense";
+        try {
+          const errorData = await res.json();
+          errMsg = errorData.error || errMsg;
+        } catch (e) {
+          errMsg = `Server Error (${res.status}): Please check backend container logs.`;
+        }
+        throw new Error(errMsg);
       }
       showFormMessage("Expense added!", "success");
       clearForm();

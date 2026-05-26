@@ -196,8 +196,24 @@ async function saveExpense() {
       if (uploadRes.ok) {
         const uploadData = await uploadRes.json();
         payload.receipt_url = uploadData.receipt_url;
+        if (uploadData.total) {
+            document.getElementById('exp-amount').value = uploadData.total.replace(/[^\d.]/g, '');
+        }
+        if (uploadData.date) {
+            document.getElementById('exp-date').value = uploadData.date;
+        }
       } else {
-        console.error("Failed to upload receipt:", await uploadRes.text());
+        let errMsg = "Failed to upload receipt";
+        try {
+          const errJSON = await uploadRes.json();
+          errMsg = errJSON.error || errMsg;
+        } catch (e) {
+          try {
+            errMsg = await uploadRes.text() || errMsg;
+          } catch (textErr) {}
+        }
+        showFormMessage(errMsg, "error");
+        return;
       }
     }
 

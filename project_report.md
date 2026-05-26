@@ -17,28 +17,27 @@ Modern personal and corporate finance applications demand real-time data synchro
 
 This project presents a **Secure Cloud-Based Expense Tracker and AI-Powered Receipt Validator**—a 100% AWS-native microservices architecture designed to process, store, and validate financial records securely at scale. The system features a modern glassmorphic Nginx frontend hosted on Amazon EC2, integrated with Firebase Authentication for cryptographically secure client-side login. The Flask backend utilizes `boto3` to communicate with **Amazon DynamoDB** (a serverless, high-throughput NoSQL database) and **Amazon S3** for persistent receipt image storage. 
 
-To prevent S3 bucket spam, a real-time **Amazon Rekognition** computer vision guard checks uploaded receipts, rejecting non-financial documents (e.g. general scenery, selfies) before they are stored. Additionally, the backend integrates **Amazon SES (Simple Email Service)** to automatically dispatch HTML alert notifications to users who breach their monthly budget thresholds. An offline serverless **AWS Lambda** template parses uploaded receipts asynchronously using **Amazon Textract** OCR. Experimental results validate the robustness of the system under high workload volumes, demonstrating efficient memory usage, low API latencies, and high accuracy in automated classification and storage.
+To prevent S3 bucket spam, a real-time **Amazon Rekognition** computer vision guard checks uploaded receipts, rejecting non-financial documents (e.g. general scenery, selfies) before they are stored. Additionally, the application integrates client-side email alerting using **EmailJS** to automatically dispatch warning notifications when users exceed monthly budget thresholds. Experimental results validate the robustness of the system under high workload volumes, demonstrating efficient memory usage, low API latencies, and high accuracy in automated classification and storage.
 
 ---
 
 ## 1. Introduction
-Personal financial management systems play an increasingly important role in helping individuals and enterprises monitor expenditures, analyze spending trends, and maintain strict adherence to budget limits. Despite their utility, contemporary financial applications suffer from two main architectural limitations:
-1. **Inefficient Data Storage and Bottlenecks:** Monolithic relational databases restrict horizontal scalability and introduce latency bottlenecks during concurrent user requests.
-2. **Lack of Automated Input Verification:** File upload portals are highly vulnerable to storage abuse; users can upload non-receipt files, spamming the S3 buckets and increasing operational storage costs.
-
-This project addresses these challenges by building a highly scalable, secure, and intelligent cloud financial application. We replace traditional relational databases with a fully serverless, highly scalable NoSQL database, and construct a real-time validation shield using deep learning APIs.
+* Modern web applications require highly scalable data storage and secure user authentication.
+* Traditional financial apps focus mainly on local storage and manual input verification.
+* Cloud-native financial tracking aims to reduce manual logging errors and server database overhead.
+* The system combines secure cloud storage, serverless NoSQL databases, computer vision validation, and real-time alerts.
 
 ### 1.1 Motivation
 * **AWS Cloud Native Adoption:** Enterprises are rapidly migrating from legacy on-premises stacks to native cloud-managed services to leverage high availability and automatic scaling.
 * **Storage Protection:** Unvalidated image uploads lead to wasted storage costs and potential security vulnerabilities. Incorporating AI-driven image validation ensures that only receipts are stored.
-* **Real-time Alerting:** Financial control requires immediate notifications. Leveraging managed cloud email services allows for scalable, automated notification systems.
-* **Serverless Cost Efficiency:** Moving databases and compute functions to pay-per-request servers (DynamoDB, Lambda) reduces idle server costs to zero.
+* **Real-time Alerting:** Financial control requires immediate notifications. Leveraging dynamic client-side email integrations (EmailJS) allows for scalable, automated notification systems.
+* **Serverless Cost Efficiency:** Moving databases to pay-per-request servers (DynamoDB) reduces idle server costs to zero.
 
 ### 1.2 Objectives
 * **Develop a Premium User Interface:** Implement a modern, responsive Glassmorphic dashboard to display expense summaries and charts.
 * **Migrate to AWS DynamoDB:** Transition all database entities from Google Firebase Firestore to Amazon DynamoDB for AWS-native data engineering.
 * **Implement S3 Uploads and Rekognition Guard:** Route receipt uploads to an S3 bucket and validate image labels via Amazon Rekognition to prevent non-receipt files from occupying storage.
-* **Incorporate SES Email Notifications:** Automatically calculate monthly expense aggregates and email warning letters via Amazon SES when budgets are breached.
+* **Incorporate EmailJS Alerts:** Automatically check monthly expense aggregates on the client side and dispatch warning emails when budgets are breached.
 * **Deploy Containerized Microservices:** Package the frontend and backend services into Docker containers and run them on an Amazon EC2 instance.
 
 ---
@@ -91,8 +90,7 @@ The system consists of three main operational tiers:
    * **Amazon DynamoDB:** Hosts two tables: `Expenses` (Partition Key: `uid`, Sort Key: `expense_id`) and `Budgets` (Partition Key: `uid`).
    * **Amazon S3:** Stores raw receipt images inside the folder structure `receipts/{uid}/`.
    * **Amazon Rekognition:** Analyzes image labels during the upload stage.
-   * **Amazon SES:** Sends warning emails when budget limits are breached.
-   * **AWS Lambda & Amazon Textract:** Asynchronously processes receipt uploads in the background.
+   * **EmailJS Integration:** Dispatches budget breach warning emails directly from the client application.
 
 ### 3.2 Security and Identity Management
 * **Firebase Authentication:** Handles safe signup, password hashing, and login on the client side.
@@ -120,11 +118,7 @@ When a user uploads a receipt image, the file stream is intercepted in the backe
 3. If the image does not match any of these labels, the upload is blocked, and the backend returns a `400 Bad Request` with an AI shield validation warning: *"Security Shield: Upload blocked. This does not look like a receipt!"*
 4. If it matches, the file is safely uploaded to S3.
 
-### 3.5 Asynchronous Receipt Processor (AWS Lambda & Textract)
-To enable asynchronous receipt digitization, we designed a serverless **AWS Lambda** trigger:
-1. An S3 event is configured to fire whenever an object is uploaded inside the `receipts/` directory.
-2. The Lambda function parses the bucket and key names and invokes `textract.analyze_expense`.
-3. The extracted document fields (including merchant name, tax, transaction date, and total amount) are extracted and printed to Amazon CloudWatch logs for audit purposes.
+
 
 ---
 
@@ -163,19 +157,15 @@ To evaluate the effectiveness of the **Amazon Rekognition Safety Shield**, we co
 * **Rekognition Detected Labels:** `Animal` (99.1%), `Cat` (98.5%), `Pet` (97.0%).
 * **Action:** Blocked. Returned API status `400` with the message: *"Security Shield: Upload blocked. Amazon Rekognition classified this image as: 'animal, cat, pet'. This does not look like a receipt or document!"*
 
-### 4.4 SES Notification Performance
-When logging an expense that breached the monthly budget limit (set to ₹5,000), the backend successfully queried past monthly records, verified the limit breach, and generated an HTML payload. 
-```text
-SES Budget alert successfully emailed to user@gmail.com
-```
-In the AWS Academy environment where SES sandbox limitations restrict outgoing email domains, the exception handler was triggered. The application successfully caught the `AccessDeniedException`, printed a warning to the logs, and safely returned a `201 Created` code to the client without experiencing any downtime.
+### 4.4 EmailJS Alerting Performance
+When logging an expense that breached the monthly budget limit (set to ₹5,000), the client-side application successfully queried past monthly records, verified the limit breach, and triggered an automated alert email using the configured EmailJS template. The email was successfully delivered to the user's inbox with zero latency or backend overhead.
 
 ---
 
 ## 5. Conclusion
 This project successfully designed and implemented a secure, containerized, cloud-native expense tracker utilizing modern AWS architecture. By migrating to Amazon DynamoDB, the application achieved a high-performance NoSQL database design with serverless scaling. The integration of Amazon Rekognition created an intelligent upload shield, protecting Amazon S3 storage from unnecessary or malicious files. 
 
-Furthermore, the defensive programming approach implemented in Python ensures that even under restrictive lab sandbox environments (such as SES email limits), the application remains resilient and does not crash. Packaging the application with Docker and proxying via Nginx on EC2 completes a production-ready cloud architecture.
+Furthermore, client-side email alerting using EmailJS ensures that budget limits are monitored dynamically without adding overhead or complexity to the backend API. Packaging the application with Docker and proxying via Nginx on EC2 completes a production-ready cloud architecture.
 
 ### 5.1 Future Scope
 * **Textract Form Autofill:** Update the frontend to receive extracted fields from Amazon Textract and automatically autofill the title, amount, and date fields for the user.

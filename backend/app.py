@@ -24,11 +24,9 @@ CORS(app)
 # Initialize AWS SDK Clients (boto3 automatically uses the EC2 IAM Role's permissions)
 s3_client = boto3.client('s3', region_name='us-east-1')
 rekognition_client = boto3.client('rekognition', region_name='us-east-1')
-ses_client = boto3.client('ses', region_name='us-east-1')
 dynamodb_resource = boto3.resource('dynamodb', region_name='us-east-1')
 
 S3_BUCKET = os.environ.get("S3_BUCKET_NAME", "my-expense-receipts-bucket")
-SES_SENDER = os.environ.get("SES_SENDER_EMAIL", "verified-sender@example.com")  # Must be verified in AWS SES Console
 
 # Define Table References
 expenses_table = dynamodb_resource.Table('Expenses')
@@ -111,30 +109,7 @@ def add_expense():
     # Save to DynamoDB
     expenses_table.put_item(Item=expense)
 
-    # ── Check Budget and Trigger Amazon SES Alert ──
-    try:
-        # Get budget limit (default 5000)
-        budget_limit = 5000.0
-        budget_resp = budgets_table.get_item(Key={'uid': uid})
-        if 'Item' in budget_resp:
-            budget_limit = float(budget_resp['Item'].get('limit', 5000.0))
 
-        # Calculate current month's expenses
-        current_month = expense["date"][:7]  # e.g. "2026-05"
-        all_expenses = expenses_table.query(
-            KeyConditionExpression=Key('uid').eq(uid)
-        ).get('Items', [])
-        
-        monthly_total = sum(
-            float(e["amount"]) for e in all_expenses 
-            if e.get("date", "").startswith(current_month)
-        )
-
-        # Trigger email if budget breached and email is available
-        if monthly_total > budget_limit and user_email:
-            send_budget_alert(user_email, monthly_total, budget_limit, expense["title"], amount)
-    except Exception as e:
-        print(f"Non-critical Budget Alert Check failed: {str(e)}")
     
     return jsonify({"message": "Expense added!", "id": expense_id}), 201
 
@@ -361,19 +336,21 @@ def upload_receipt():
                 MinConfidence=55
             )
             
-            allowed_labels = {'document', 'receipt', 'paper', 'invoice', 'text', 'menu', 'bill', 'page'}
+            # Enforce a high‑confidence 'receipt' label.
             is_valid_receipt = False
             detected_labels = []
             
             for label in rek_response.get('Labels', []):
                 name = label['Name'].lower()
+                confidence = label.get('Confidence', 0)
                 detected_labels.append(name)
-                if name in allowed_labels:
+                if name == 'receipt' and confidence >= 80:
                     is_valid_receipt = True
-                    
+                    break
+            
             if not is_valid_receipt:
                 return jsonify({
-                    "error": f"Security Shield: Upload blocked. Amazon Rekognition classified this image as: '{', '.join(detected_labels[:3])}'. This does not look like a receipt or document!"
+                    "error": f"Security Shield: Uploaded image not recognized as a receipt (detected: {', '.join(detected_labels)})."
                 }), 400
         except Exception as re_err:
             # Fallback if Rekognition is down or disabled
@@ -395,53 +372,15 @@ def upload_receipt():
             # Since Vocareum is us-east-1, we can construct the URL directly
             receipt_url = f"https://{S3_BUCKET}.s3.us-east-1.amazonaws.com/{unique_filename}"
             
-            return jsonify({"message": "File uploaded", "receipt_url": receipt_url}), 200
+            return jsonify({
+                "message": "File uploaded",
+                "receipt_url": receipt_url
+            }), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
 
-# ─────────────────────────────────────────────
-# HELPER: Send Amazon SES Budget Alert Email
-# ─────────────────────────────────────────────
-def send_budget_alert(recipient_email, current_total, budget_limit, triggered_item, item_amount):
-    """
-    Triggers an email notification via Amazon SES when a user breaches their budget.
-    """
-    try:
-        ses_client.send_email(
-            Source=SES_SENDER,
-            Destination={'ToAddresses': [recipient_email]},
-            Message={
-                'Subject': {'Data': '⚠️ BUDGET ALERT: Expense Calculator Limit Exceeded!'},
-                'Body': {
-                    'Html': {
-                        'Data': f"""
-                        <html>
-                            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                                <div style="max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px;">
-                                    <h2 style="color: #d9534f; border-bottom: 2px solid #d9534f; padding-bottom: 10px;">⚠️ Expense Alert!</h2>
-                                    <p>Hello,</p>
-                                    <p>This is an automated alert from your <b>Cloud Expense Tracker</b> application.</p>
-                                    <p>Logging your latest expense (<b>{triggered_item}</b> of <b>${item_amount:.2f}</b>) has pushed you over your monthly limit.</p>
-                                    <div style="background-color: #f9f9f9; border-left: 4px solid #d9534f; padding: 15px; margin: 20px 0;">
-                                        <p style="margin: 0;"><b>Your Budget Limit:</b> ${budget_limit:.2f}</p>
-                                        <p style="margin: 5px 0 0 0; color: #d9534f; font-size: 1.1em;"><b>Your Monthly Expenditure:</b> ${current_total:.2f}</p>
-                                    </div>
-                                    <p>Please log in to your dashboard to manage your spending.</p>
-                                    <p style="font-size: 0.8em; color: #999; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-                                        This email was securely delivered using <b>Amazon Simple Email Service (SES)</b>.
-                                    </p>
-                                </div>
-                            </body>
-                        </html>
-                        """
-                    }
-                }
-            }
-        )
-        print(f"SES Budget alert successfully emailed to {recipient_email}")
-    except Exception as e:
-        print(f"SES Emailing failed: {str(e)}")
+
 
 
 # ─────────────────────────────────────────────
